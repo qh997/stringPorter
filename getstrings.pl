@@ -3,14 +3,20 @@
 use warnings;
 use strict;
 use Cwd;
+use Getopt::Long;
 use File::Find;
 use Text::CSV;
 
-my $BASEPATH = @ARGV ? shift @ARGV : getcwd;
+my $BASEPATH = getcwd;
 my $OUTFILE = 'test/new.csv';
+my $DEBUG = 0;
 my $LANGUAGE = [
     'values',
 ];
+
+GetOptions ('path=s' => \$BASEPATH, 'out=s' => \$OUTFILE, 'debug' => \$DEBUG);
+print $BASEPATH."\n" if $DEBUG;
+print $OUTFILE."\n" if $DEBUG;
 
 -d $BASEPATH || die "Cannot found path [$BASEPATH], $!\n";
 $BASEPATH =~ s{(?<!/)$}{/};
@@ -34,6 +40,7 @@ foreach my $file (@file_list) {
 
     my $file_path = $file;
     $file_path =~ s/^$BASEPATH//;
+    print $file."\n" if $DEBUG;
 
     my $filestring = join '', @file_content;
     while ($filestring =~ m{<str\s+name="(.*?)".*?>.*?<val>(.*?)</val>.*?</str>}xsg) {
