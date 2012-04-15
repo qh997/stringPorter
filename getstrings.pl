@@ -4,7 +4,6 @@ use warnings;
 use strict;
 use Cwd;
 use File::Find;
-use XML::Parser;
 use Text::CSV;
 
 my $BASEPATH = @ARGV ? shift @ARGV : getcwd;
@@ -27,14 +26,15 @@ my $csv = Text::CSV -> new({binary => 1, eol => $/}) or die "Cannot use CSV: ".T
 $csv -> eol("\r");
 $csv -> print($oh, ['File path', 'name', 'value']);
 
+my @out;
 foreach my $file (@file_list) {
     open my $fh, "< $file" or warn "Cannot open file [$file], $!" and next;
     my @file_content = <$fh>;
     close $fh;
-    
+
     my $file_path = $file;
     $file_path =~ s/^$BASEPATH//;
-    
+
     my $filestring = join '', @file_content;
     while ($filestring =~ m{<str\s+name="(.*?)".*?>.*?<val>(.*?)</val>.*?</str>}xsg) {
         my $sname = $1;
