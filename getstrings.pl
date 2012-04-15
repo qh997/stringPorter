@@ -18,7 +18,7 @@ GetOptions ('path=s' => \$BASEPATH, 'out=s' => \$OUTFILE, 'debug' => \$DEBUG);
 print $BASEPATH."\n" if $DEBUG;
 print $OUTFILE."\n" if $DEBUG;
 
--d $BASEPATH || die "Cannot found path [$BASEPATH], $!\n";
+-d $BASEPATH || die "$BASEPATH: $!\n";
 $BASEPATH =~ s{(?<!/)$}{/};
 
 my $prelang = join '|', @$LANGUAGE;
@@ -34,7 +34,7 @@ $csv -> print($oh, ['File path', 'name', 'value']);
 
 my @out;
 foreach my $file (@file_list) {
-    open my $fh, "< $file" or warn "Cannot open file [$file], $!" and next;
+    open my $fh, "< $file" or warn "$file: $!" and next;
     my @file_content = <$fh>;
     close $fh;
 
