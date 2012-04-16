@@ -56,6 +56,8 @@ foreach my $file (@file_list) {
     print $file."\n" if $DEBUG;
 
     my $filestring = join '', @file_content;
+    $filestring =~ s/<!--.*?-->//sg;
+    print "\n===$file\n$filestring\n===\n" if $DEBUG;
     while ($filestring =~ m{<(string\S*?)\s+name="(.*?)".*?>(.*?)</\1.*?>}xsg) {
         my $stype = $1;
         my $sname = $2;
