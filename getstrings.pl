@@ -4,20 +4,32 @@ use warnings;
 use strict;
 use Cwd;
 use Getopt::Long;
+use Pod::Usage;
 use File::Find;
-use XML::Parser;
 use Text::CSV;
 
 my $BASEPATH = getcwd;
-my $OUTFILE = 'test/new.csv';
+my $OUTFILE = 'strings.csv';
+my $HELP = 0;
 my $DEBUG = 0;
 my $LANGUAGE = [
     'values',
 ];
 
-GetOptions ('path=s' => \$BASEPATH, 'out=s' => \$OUTFILE, 'debug' => \$DEBUG);
-print $BASEPATH."\n" if $DEBUG;
-print $OUTFILE."\n" if $DEBUG;
+GetOptions (
+    'path=s' => \$BASEPATH,
+    'out=s'  => \$OUTFILE,
+    'help|?' => \$HELP,
+    'debug'  => \$DEBUG,
+) or pod2usage(2);
+
+if ($HELP) {
+    pod2usage(1);
+    exit 0;
+}
+
+print "$BASEPATH\n" if $DEBUG;
+print "$OUTFILE\n" if $DEBUG;
 
 -d $BASEPATH || die "$BASEPATH: $!\n";
 $BASEPATH =~ s{(?<!/)$}{/};
@@ -31,7 +43,7 @@ find(\&wanted, $BASEPATH);
 open my $oh, "> ".$OUTFILE or die "$OUTFILE: $!";
 my $csv = Text::CSV -> new({binary => 1, eol => $/}) or die "Cannot use CSV: ".Text::CSV -> error_diag ();
 $csv -> eol("\r\n");
-$csv -> print($oh, ['File path', 'name', 'value']);
+$csv -> print($oh, ['File path', 'Type', 'name', 'value']);
 
 my @out;
 foreach my $file (@file_list) {
@@ -44,11 +56,12 @@ foreach my $file (@file_list) {
     print $file."\n" if $DEBUG;
 
     my $filestring = join '', @file_content;
-    while ($filestring =~ m{<string\s+name="(.*?)".*?>(.*?)</string.*?>}xsg) {
-        my $sname = $1;
-        my $svalue = $2;
+    while ($filestring =~ m{<(string\S*?)\s+name="(.*?)".*?>(.*?)</\1.*?>}xsg) {
+        my $stype = $1;
+        my $sname = $2;
+        my $svalue = $3;
 
-        $csv -> print($oh, [$file_path, $sname, $svalue]);
+        $csv -> print($oh, [$file_path, $stype, $sname, $svalue]);
     }
 }
 
@@ -67,3 +80,50 @@ sub wanted {
         }
     }
 }
+
+
+__END__
+
+=head1 NAME
+
+getstrings.pl - Extract string or string-array from strings.xml to CSV.
+
+=head1 SYNOPSIS
+
+getstrings.pl [options]
+
+ Options:
+   -path <Base path>
+   -out <Output file>
+   -help
+   -debug
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-path>
+
+Set the base path which you want to get strings.
+Use current path when not specified.
+
+=item B<-out>
+
+Specified Output filename, use 'strings.csv' for defauilt.
+
+=item B<-help>
+
+Help.
+
+=item B<-debug>
+
+print debug when running.
+
+=back
+
+=head1 DESCRIPTION
+
+B<getstrings.pl>
+
+=cut
+
