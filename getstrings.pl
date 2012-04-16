@@ -5,6 +5,7 @@ use strict;
 use Cwd;
 use Getopt::Long;
 use File::Find;
+use XML::Parser;
 use Text::CSV;
 
 my $BASEPATH = getcwd;
@@ -27,9 +28,9 @@ $prelang =~ s/(?=[.()])/\\/g;
 my @file_list;
 find(\&wanted, $BASEPATH);
 
-open my $oh, ">:encoding(utf8)", $OUTFILE or die "$OUTFILE: $!";
+open my $oh, "> ".$OUTFILE or die "$OUTFILE: $!";
 my $csv = Text::CSV -> new({binary => 1, eol => $/}) or die "Cannot use CSV: ".Text::CSV -> error_diag ();
-$csv -> eol("\r");
+$csv -> eol("\r\n");
 $csv -> print($oh, ['File path', 'name', 'value']);
 
 my @out;
@@ -43,7 +44,7 @@ foreach my $file (@file_list) {
     print $file."\n" if $DEBUG;
 
     my $filestring = join '', @file_content;
-    while ($filestring =~ m{<str\s+name="(.*?)".*?>.*?<val>(.*?)</val>.*?</str>}xsg) {
+    while ($filestring =~ m{<string\s+name="(.*?)".*?>(.*?)</string.*?>}xsg) {
         my $sname = $1;
         my $svalue = $2;
 
