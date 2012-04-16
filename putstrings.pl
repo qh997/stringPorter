@@ -65,9 +65,9 @@ foreach my $path (keys %truck) {
     my $xmlstr = join '', @xmlfile;
 
     foreach my $name (keys %{$truck{$path}}) {
-        print "\t$name\n" if $DEBUG;
         $xmlstr = put_strings($xmlstr, $path, $name, $truck{$path} -> {$name});
     }
+#    print $xmlstr."\n";
 }
 
 sub put_strings {
@@ -76,16 +76,23 @@ sub put_strings {
     my $name = shift;
     my $value = shift;
 
+    print "\t\$name = $name\n" if 1||$DEBUG;
+
     if (ref $value eq 'ARRAY') {
         foreach my $item (@{$value}) {
-            #print "\t\t<item> $item\n" if $DEBUG;
+            print "\t\t<item> $item\n" if $DEBUG;
         }
     }
     else {
-        print "\t\t$value\n" if $DEBUG;
-        print "!!!!!" if $xml =~ m{(?<=<string name="$name">).*?(?=</string)}sg;
-        $xml =~ s{(?<=<string name="$name">).*?(?=</string)}{##############}sg;
-        print $xml."\n";
+        print "\t\t\$value = $value\n" if 1||$DEBUG;
+        if ($xml =~ m{(?=<!--).*?(?<=-->).*?(<string[^>]*name="$name"[^>]*>)}s) {
+            print "\$1 = $1\n";
+            print "\$2 = $2\n";
+            #$xml =~ s{((?:(?>(?=<!--).*?(?<=-->))|.*?).*?(<string[^>]*name="$name"[^>]*>)).*?(?=</string)}{$1$value}sg;
+        }
+        else {
+            
+        }
     }
 
     return $xml;

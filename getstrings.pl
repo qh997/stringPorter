@@ -42,7 +42,7 @@ find(\&wanted, $BASEPATH);
 
 open my $oh, "> ".$OUTFILE or die "$OUTFILE: $!";
 my $csv = Text::CSV -> new({binary => 1, eol => $/}) or die "Cannot use CSV: ".Text::CSV -> error_diag ();
-$csv -> eol("\r\n");
+#$csv -> eol("\r\n");
 $csv -> print($oh, ['File path', 'Type', 'name', 'value']);
 
 my @out;
