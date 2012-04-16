@@ -28,11 +28,11 @@ if ($HELP) {
     exit 0;
 }
 
-print "$BASEPATH\n" if $DEBUG;
-print "$OUTFILE\n" if $DEBUG;
-
 -d $BASEPATH || die "$BASEPATH: $!\n";
 $BASEPATH =~ s{(?<!/)$}{/};
+
+print "$BASEPATH\n" if $DEBUG;
+print "$OUTFILE\n" if $DEBUG;
 
 my $prelang = join '|', @$LANGUAGE;
 $prelang =~ s/(?=[.()])/\\/g;
@@ -63,7 +63,15 @@ foreach my $file (@file_list) {
         my $sname = $2;
         my $svalue = $3;
 
-        $csv -> print($oh, [$file_path, $stype, $sname, $svalue]);
+        if ($stype eq 'string-array') {
+            while ($svalue =~ m{<item>(.*?)</item>}sg) {
+                my $svalue_item = $1;
+                $csv -> print($oh, [$file_path, $stype, $sname, $svalue_item]);
+            }
+        }
+        else {
+            $csv -> print($oh, [$file_path, $stype, $sname, $svalue]);
+        }
     }
 }
 
