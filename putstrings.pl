@@ -15,10 +15,15 @@ my $DEBUG = 0;
 
 GetOptions (
     'path=s' => \$BASEPATH,
-    'out=s'  => \$OUTFILE,
+    'in=s'  => \$OUTFILE,
     'help|?' => \$HELP,
     'debug'  => \$DEBUG,
-);
+) or pod2usage(2);
+
+if ($HELP) {
+    pod2usage(1);
+    exit 0;
+}
 
 -d $BASEPATH || die "$BASEPATH: $!\n";
 $BASEPATH =~ s{(?<!/)$}{/};
@@ -57,9 +62,9 @@ close $oh;
 
 print '=' x 40, "\n" if $DEBUG;
 foreach my $path (keys %truck) {
-    print $path."\n" if $DEBUG;
+    print "Write in $path\n";
 
-    open my $fh, "< $BASEPATH$path" or die "$path: $!";
+    open my $fh, "< $BASEPATH$path" or warn "$path: $!";
     my @xmlfile = <$fh>;
     close $fh;
     my $xmlstr = join '', @xmlfile;
@@ -67,7 +72,10 @@ foreach my $path (keys %truck) {
     foreach my $name (keys %{$truck{$path}}) {
         $xmlstr = put_strings($xmlstr, $path, $name, $truck{$path} -> {$name});
     }
-#    print $xmlstr."\n";
+
+    open my $oh, "> $BASEPATH$path" or warn "$path: $!";
+    print $oh $xmlstr;
+    close $oh;
 }
 
 sub put_strings {
@@ -76,24 +84,82 @@ sub put_strings {
     my $name = shift;
     my $value = shift;
 
-    print "\t\$name = $name\n" if 1||$DEBUG;
+    print "\t\$name = $name\n" if $DEBUG;
 
     if (ref $value eq 'ARRAY') {
-        foreach my $item (@{$value}) {
-            print "\t\t<item> $item\n" if $DEBUG;
+        for (my $i = 0; $i < @{$value}; $i++) {
+            print "\t\t<item> ${$value}[$i]\n" if $DEBUG;
+            my $j = @{$value} - $i;
+            
+            if ($xml =~ s{
+                    (<string-array[^>]*name="$name"[^>]*>
+                     .*?
+                     (?:<item>.*?</item>.*?){$i})
+                    (?<=<item>).*?(?=</item>)
+                    }{$1${$value}[$i]}xgs) {
+                print "Put item in <$name>.\n" if $DEBUG;
+            }
+            else {
+                warn "Cannot put <$name> with item <${$value}[$i]> in [$path].\n";
+            }
         }
     }
     else {
-        print "\t\t\$value = $value\n" if 1||$DEBUG;
-        if ($xml =~ m{(?=<!--).*?(?<=-->).*?(<string[^>]*name="$name"[^>]*>)}s) {
-            print "\$1 = $1\n";
-            print "\$2 = $2\n";
-            #$xml =~ s{((?:(?>(?=<!--).*?(?<=-->))|.*?).*?(<string[^>]*name="$name"[^>]*>)).*?(?=</string)}{$1$value}sg;
+        print "\t\t\$value = $value\n" if $DEBUG;
+        if ($xml =~ s{(<string[^>]*name="$name"[^>]*>).*?(?=</string)}{$1$value}sg) {
+            print "Put string <$name>.\n" if $DEBUG;
         }
         else {
-            
+            warn "Cannot found <$name> in [$path].\n";
         }
     }
 
     return $xml;
 }
+
+
+__END__
+
+=head1 NAME
+
+putstrings.pl - Write string or string-array from CSV to strings.xml.
+
+=head1 SYNOPSIS
+
+putstrings.pl [options]
+
+ Options:
+   -path <Base path>
+   -in <input file>
+   -help
+   -debug
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-path>
+
+Set the base path which you want to put strings.
+Use current path when not specified.
+
+=item B<-out>
+
+Specified Output filename, use 'strings.csv' for defauilt.
+
+=item B<-help>
+
+Help.
+
+=item B<-debug>
+
+print debug when running.
+
+=back
+
+=head1 DESCRIPTION
+
+B<getstrings.pl>
+
+=cut
+
