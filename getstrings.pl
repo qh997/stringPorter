@@ -12,9 +12,14 @@ my $BASEPATH = getcwd;
 my $OUTFILE = 'strings.csv';
 my $HELP = 0;
 my $DEBUG = 0;
-my $LANGUAGE = [
+my @LANGUAGE = (
     'values',
-];
+);
+my %TYPES = (
+    'string' => 'SINGLE',
+    'string-array' => 'MULTI',
+    'plurals' => 'SINGLE',
+);
 
 GetOptions (
     'path=s' => \$BASEPATH,
@@ -34,11 +39,13 @@ $BASEPATH =~ s{(?<!/)$}{/};
 print "$BASEPATH\n" if $DEBUG;
 print "$OUTFILE\n" if $DEBUG;
 
-my $prelang = join '|', @$LANGUAGE;
+my $prelang = join '|', @LANGUAGE;
 $prelang =~ s/(?=[.()])/\\/g;
 
 my @file_list;
 find(\&wanted, $BASEPATH);
+
+my $findType = join '|', keys %TYPES;
 
 open my $oh, "> ".$OUTFILE or die "$OUTFILE: $!";
 my $csv = Text::CSV -> new({binary => 1, eol => $/}) or die "Cannot use CSV: ".Text::CSV -> error_diag ();
@@ -57,8 +64,8 @@ foreach my $file (@file_list) {
 
     my $filestring = join '', @file_content;
     $filestring =~ s/<!--.*?-->//sg;
-    print "\n===$file\n$filestring\n===\n" if $DEBUG;
-    while ($filestring =~ m{<(string\S*?)\s+name="(.*?)".*?>(.*?)</\1.*?>}xsg) {
+
+    while ($filestring =~ m{<($findType).*?name="(.*?)".*?>(.*?)</\1.*?>}xsg) {
         my $stype = $1;
         my $sname = $2;
         my $svalue = $3;

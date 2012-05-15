@@ -39,6 +39,7 @@ my $title = <$oh>;
 print $title."\n" if $DEBUG;
 
 my %truck;
+my %type;
 while (my $row = $csv -> getline($oh)) {
     if (@$row == 4) {
         my $path = shift @$row;
@@ -48,13 +49,16 @@ while (my $row = $csv -> getline($oh)) {
 
         print "$path:$type:$name:$value\n" if $DEBUG;
 
+        $type{$path, $name} = $type;
+        print $type{$path, $name}."\n" if $DEBUG;
+
         $truck{$path} = {} unless exists $truck{$path};
-        if ($type eq 'string') {
-            $truck{$path} -> {$name} = $value; 
-        }
-        elsif ($type eq 'string-array') {
+        if ($type eq 'string-array') {
             $truck{$path} -> {$name} = [] unless exists ${$truck{$path}}{$name};
             push @{$truck{$path} -> {$name}}, $value;
+        }
+        else {
+            $truck{$path} -> {$name} = $value; 
         }
     }
 }
@@ -70,7 +74,7 @@ foreach my $path (keys %truck) {
     my $xmlstr = join '', @xmlfile;
 
     foreach my $name (keys %{$truck{$path}}) {
-        $xmlstr = put_strings($xmlstr, $path, $name, $truck{$path} -> {$name});
+        $xmlstr = put_strings($xmlstr, $path, $name, $truck{$path} -> {$name}, $type{$path, $name});
     }
 
     open my $oh, "> $BASEPATH$path" or warn "$path: $!";
@@ -83,6 +87,7 @@ sub put_strings {
     my $path = shift;
     my $name = shift;
     my $value = shift;
+    my $type = shift;
 
     print "\t\$name = $name\n" if $DEBUG;
 
@@ -92,7 +97,7 @@ sub put_strings {
             my $j = @{$value} - $i;
             
             if ($xml =~ s{
-                    (<string-array[^>]*name="$name"[^>]*>
+                    (<$type[^>]*name="$name"[^>]*>
                      .*?
                      (?:<item>.*?</item>.*?){$i})
                     (?<=<item>).*?(?=</item>)
@@ -105,8 +110,9 @@ sub put_strings {
         }
     }
     else {
+        print "\t\t\$type = $type\n" if $DEBUG;
         print "\t\t\$value = $value\n" if $DEBUG;
-        if ($xml =~ s{(<string[^>]*name="$name"[^>]*>).*?(?=</string)}{$1$value}sg) {
+        if ($xml =~ s{(<$type[^>]*name="$name"[^>]*>).*?(?=</$type)}{$1$value}sg) {
             print "Put string <$name>.\n" if $DEBUG;
         }
         else {
