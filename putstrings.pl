@@ -11,12 +11,14 @@ use Text::CSV;
 my $BASEPATH = getcwd;
 my $OUTFILE = 'strings.csv';
 my $HELP = 0;
+my $SHOW_CHN = 0;
 my $DEBUG = 0;
 
 GetOptions (
     'path=s' => \$BASEPATH,
     'in=s'  => \$OUTFILE,
     'help|?' => \$HELP,
+    'show-changes'  => \$SHOW_CHN,
     'debug'  => \$DEBUG,
 ) or pod2usage(2);
 
@@ -40,25 +42,37 @@ print $title."\n" if $DEBUG;
 
 my %truck;
 my %type;
+my $line = 1;
 while (my $row = $csv -> getline($oh)) {
-    if (@$row == 4) {
+    $line++;
+    if (@$row == 5) {
         my $path = shift @$row;
         my $type = shift @$row;
         my $name = shift @$row;
         my $value = shift @$row;
+        my $pw_edits = shift @$row;
 
-        print "$path:$type:$name:$value\n" if $DEBUG;
+        next unless ($pw_edits);
+        if ($pw_edits eq $value) {
+            warn "[WARNING] Line $line : no change!\n";
+            next;
+        }
+        elsif (!-e $BASEPATH.$path) {
+            warn "[ERROR] Line $line : $path cannot found!\n";
+            next;
+        }
+        print "Line $line will be replacing.\n" if $SHOW_CHN;
+        print "$path:$type:$name:$value:$pw_edits\n" if $DEBUG;
 
         $type{$path, $name} = $type;
         print $type{$path, $name}."\n" if $DEBUG;
 
         $truck{$path} = {} unless exists $truck{$path};
         if ($type eq 'string-array') {
-            $truck{$path} -> {$name} = [] unless exists ${$truck{$path}}{$name};
-            push @{$truck{$path} -> {$name}}, $value;
+            push @{$truck{$path}->{$name}}, $pw_edits;
         }
         else {
-            $truck{$path} -> {$name} = $value; 
+            $truck{$path}->{$name} = $pw_edits;
         }
     }
 }
@@ -74,7 +88,7 @@ foreach my $path (keys %truck) {
     my $xmlstr = join '', @xmlfile;
 
     foreach my $name (keys %{$truck{$path}}) {
-        $xmlstr = put_strings($xmlstr, $path, $name, $truck{$path} -> {$name}, $type{$path, $name});
+        $xmlstr = put_strings($xmlstr, $path, $name, $truck{$path}->{$name}, $type{$path, $name});
     }
 
     open my $oh, "> $BASEPATH$path" or warn "$path: $!";
@@ -116,7 +130,7 @@ sub put_strings {
             print "Put string <$name>.\n" if $DEBUG;
         }
         else {
-            warn "Cannot found <$name> in [$path].\n";
+            warn "[ERROR] Cannot found <$name> in [$path]!\n";
         }
     }
 
@@ -138,6 +152,7 @@ putstrings.pl [options]
    -path <Base path>
    -in <input file>
    -help
+   -show-changes
    -debug
 
 =head1 OPTIONS
@@ -156,6 +171,10 @@ Specified Output filename, use 'strings.csv' for defauilt.
 =item B<-help>
 
 Help.
+
+=item B<-show-changes>
+
+Lists the line number of the line in the scv file that will be replaced.
 
 =item B<-debug>
 

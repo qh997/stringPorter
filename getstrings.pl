@@ -33,7 +33,7 @@ if ($HELP) {
     exit 0;
 }
 
--d $BASEPATH || die "$BASEPATH: $!\n";
+-d $BASEPATH or die "$BASEPATH: $!\n";
 $BASEPATH =~ s{(?<!/)$}{/};
 
 print "$BASEPATH\n" if $DEBUG;
