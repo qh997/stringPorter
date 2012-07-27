@@ -48,9 +48,10 @@ find(\&wanted, $BASEPATH);
 my $findType = join '|', keys %TYPES;
 
 open my $oh, "> ".$OUTFILE or die "$OUTFILE: $!";
-my $csv = Text::CSV -> new({binary => 1, eol => $/}) or die "Cannot use CSV: ".Text::CSV -> error_diag ();
+my $csv = Text::CSV->new({binary => 1, eol => $/})
+    or die "Cannot use CSV: ".Text::CSV->error_diag ();
 #$csv -> eol("\r\n");
-$csv -> print($oh, ['File path', 'Type', 'name', 'value']);
+$csv->print($oh, ['File path', 'Type', 'name', 'value']);
 
 my @out;
 foreach my $file (@file_list) {
@@ -73,11 +74,11 @@ foreach my $file (@file_list) {
         if ($stype eq 'string-array') {
             while ($svalue =~ m{<item>(.*?)</item>}sg) {
                 my $svalue_item = $1;
-                $csv -> print($oh, [$file_path, $stype, $sname, $svalue_item]);
+                $csv->print($oh, [$file_path, $stype, $sname, $svalue_item]);
             }
         }
         else {
-            $csv -> print($oh, [$file_path, $stype, $sname, $svalue]);
+            $csv->print($oh, [$file_path, $stype, $sname, $svalue]);
         }
     }
 }

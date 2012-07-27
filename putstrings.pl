@@ -33,8 +33,9 @@ $BASEPATH =~ s{(?<!/)$}{/};
 print "$BASEPATH\n" if $DEBUG;
 print "$OUTFILE\n" if $DEBUG;
 
-my $csv = Text::CSV -> new({binary => 1, eol => $/}) or die "Cannot use CSV: ".Text::CSV -> error_diag ();
-#$csv -> eol("\r\n");
+my $csv = Text::CSV->new({binary => 1, eol => $/})
+    or die "Cannot use CSV: ".Text::CSV->error_diag();
+#$csv->eol("\r\n");
 
 open my $oh, "< $OUTFILE" or die "$OUTFILE: $!";
 my $title = <$oh>;
@@ -43,7 +44,7 @@ print $title."\n" if $DEBUG;
 my %truck;
 my %type;
 my $line = 1;
-while (my $row = $csv -> getline($oh)) {
+while (my $row = $csv->getline($oh)) {
     $line++;
     if (@$row == 5) {
         my $path = shift @$row;
